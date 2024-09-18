@@ -52,6 +52,13 @@ def tovar_price(order_list, type_id, naz): #выбирает все ордера
             tovar_out.append({"volume_remain": order["volume_remain"], 'price': order["price"]*naz})
     return tovar_out
 
+def tovar_price_out(order_list, type_id, naz): #выбирает все ордера на товар и добавляем комиссию
+    tovar_out = []
+    for order in order_list:
+        if order['type_id'] == type_id:
+            tovar_out.append({"volume_remain": order["volume_remain"], 'price': order["price"]*naz, 'station_id': order["station_id"]})
+    return tovar_out
+
 def spisok_tovarov_buy(resp_out, resp_in, sys_out, sys_in, naz): #на вход список ордеров двух систем номера систем и наценка на покупку
     list_out, list_in = [], []
     for order in resp_out:
@@ -66,11 +73,10 @@ def spisok_tovarov_buy(resp_out, resp_in, sys_out, sys_in, naz): #на вход 
     type_in = spisok(list_in, 'type_id') #номера товаров
     type_list = list(set(type_out) & set(type_in))
     type_list.sort()
-    naz = naz #потери от налогов и комиссий
     list_end = []
     for type_id in type_list:
         ob = proverka(type_id)['ob'] #получение объема предмета
-        order_out = tovar_price(list_out, type_id, 1) #все ордера по товару на покупку
+        order_out = tovar_price_out(list_out, type_id, 1) #все ордера по товару на покупку
         order_in = tovar_price(list_in, type_id, naz) #все ордера по товару на покупку
         order_out.sort(key=lambda x: x.get('price'))
         order_in.sort(key=lambda x: x.get('price'), reverse=True)
@@ -159,12 +165,79 @@ def system_list(): #использовал для создания списка 
     print(system_list)
     return system_list
 
+def system_info(sys): #информация по системе
+    #входящее значение - число
+    #пример результата
+    #{'constellation_id': 20000209, 'name': 'Torrinos', 'planets': [{'planet_id': 40090878}, {'moons': [40090880], 'planet_id': 40090879}, {'moons': [40090882, 40090883, 40090884, 40090885, 40090886], 'planet_id': 40090881}, {'asteroid_belts': [40090888], 'moons': [40090889, 40090890, 40090891, 40090892, 40090893, 40090894, 40090895, 40090896, 40090897], 'planet_id': 40090887}, {'asteroid_belts': [40090903], 'moons': [40090899, 40090900, 40090901, 40090902, 40090904, 40090905, 40090906, 40090907, 40090908, 40090909, 40090910, 40090911, 40090912, 40090913, 40090914, 40090915, 40090916, 40090917, 40090918, 40090919, 40090920], 'planet_id': 40090898}, {'asteroid_belts': [40090922, 40090923, 40090924, 40090929], 'moons': [40090925, 40090926, 40090927, 40090928, 40090930, 40090931, 40090932, 40090933, 40090934, 40090935, 40090936, 40090937, 40090938, 40090939, 40090940, 40090941, 40090942, 40090943], 'planet_id': 40090921}, {'asteroid_belts': [40090946, 40090951, 40090954, 40090955, 40090957], 'moons': [40090945, 40090947, 40090948, 40090949, 40090950, 40090952, 40090953, 40090956, 40090958], 'planet_id': 40090944}, {'asteroid_belts': [40090965], 'moons': [40090960, 40090961, 40090962, 40090963, 40090964, 40090966], 'planet_id': 40090959}], 'position': {'x': -2.2741640581855194e+17, 'y': 1.0714092404522848e+17, 'z': 1.9936347925498147e+17}, 'security_class': 'C', 'security_status': 0.5196676850318909, 'star_id': 40090877, 'stargates': [50003515, 50003516], 'stations': [60000946, 60002326, 60004036, 60004042, 60004045, 60004201], 'system_id': 30001429}
+    url = f'https://esi.evetech.net/dev/universe/systems/{sys}'
+    system_id_list = get_resp(url)
+    #print(system_id_list)
+    return system_id_list
+
+def constellation_info(con): #информация по созвездию
+    #входящее значение - число
+    #пример результата
+    #{'constellation_id': 20000209, 'name': 'Asalola',
+     #'position': {'x': -2.219338101965536e+17, 'y': 1.1361829249192586e+17, 'z': 1.851487694419098e+17},
+     #'region_id': 10000016, 'systems': [30001424, 30001425, 30001426, 30001427, 30001428, 30001429]}
+
+    url = f'https://esi.evetech.net/legacy/universe/constellations/{con}'
+    const_id_list = get_resp(url)
+    #print(const_id_list)
+    return const_id_list
+
+def station_info(station): #информация по станции
+    #входящее значение - число
+    #пример результата
+    #{'solar_system_id': 30001429, 'station_name': 'Torrinos V - Moon 16 - Home Guard Logistic Support'}
+    url = f'https://esi.evetech.net/legacy/universe/stations/{station}/'
+    station_id_list = get_resp(url)
+    print(station_id_list)
+    return station_id_list
+
+def get_spisok_in(reg, sell_buy, station): #фортирует общий список предметов в системе куда летим
+    url = f'https://esi.evetech.net/latest/markets/{reg}/orders/'
+    a = 0
+    resp_out = []
+    while True:
+        a += 1
+        resp_temp = get_api(url, str(a), sell_buy)
+        if resp_temp == False:
+            break
+        print(a)
+        for i in resp_temp:
+            if i['location_id'] == station:
+                resp_out.append([i['type_id'], i['price'], i['volume_remain']])
+                #resp_out.append({'price': i['price'], 'type_id': i['type_id'],
+                #                 'volume_remain': i['volume_remain']})
+        resp_out.sort()
+    return resp_out
+
+def get_spisok_out(reg, sell_buy, station): #фортирует общий список предметов в системе
+    url = f'https://esi.evetech.net/latest/markets/{reg}/orders/'
+    a = 0
+    resp_out = []
+    while True:
+        a += 1
+        resp_temp = get_api(url, str(a), sell_buy)
+        if resp_temp == False:
+            break
+        print(a)
+        for i in resp_temp:
+            if i['location_id'] in station:
+                resp_out.append([i['type_id'], i['price'], i['volume_remain'], i['location_id']])
+                #resp_out.append({'price': i['price'], 'station_id': i['location_id'], 'type_id': i['type_id'],
+                #                 'volume_remain': i['volume_remain']})
+        resp_out.sort()
+    return resp_out
+
+def advansed_price():
+    url = 'https://esi.evetech.net/latest/markets/prices/'
+    return get_resp(url)
+
+
 if __name__ == '__main__':
-    system_list()
-
-#нужно достать список всех станций на пути следования, помотреть sell ордера и сравнить их с житой, если список по профиту более 500тыс то заехать забрать
-
-#так выглядит ордер
-#{"duration":90,"is_buy_order":false,"issued":"2024-07-15T16:16:51Z","location_id":60003760,"min_volume":1,"order_id":6831996927,"price":39960000.0,"range":"region","system_id":30000142,"type_id":28264,"volume_remain":15,"volume_total":15}
-#так выглядит описание системы
-    #{"constellation_id":20000020,"name":"Jita","planets":[{"planet_id":40009077},{"planet_id":40009078},{"moons":[40009081],"planet_id":40009080},{"moons":[40009083,40009084,40009085,40009087,40009088,40009089,40009090,40009091,40009092,40009093,40009094,40009097],"planet_id":40009082},{"moons":[40009099,40009100,40009101,40009102,40009103,40009104,40009105,40009106,40009107,40009108,40009109,40009110,40009111,40009112,40009113,40009114,40009115],"planet_id":40009098},{"moons":[40009118],"planet_id":40009116},{"moons":[40009121,40009122],"planet_id":40009119},{"planet_id":40009123}],"position":{"x":-129064861735000000.0,"y":60755306910000000.0,"z":117469227060000000.0},"security_class":"B","security_status":0.9459131360054016,"star_id":40009076,"stargates":[50001248,50001249,50001250,50013876,50013913,50013921,50013928],"stations":[60000361,60000364,60000451,60000463,60002953,60002959,60003055,60003460,60003463,60003466,60003469,60003757,60003760,60004423,60015169],"system_id":30000142}
+    tmp = system_info(30000142)
+    print(tmp['stations'])
+    #tmp1 = constellation_info(20000209)
+    tmp3 = station_info(60003760)
