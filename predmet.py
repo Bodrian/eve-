@@ -24,7 +24,7 @@ def predmet_info(type_id='1333'): #как будет выглядеть в сп�
     if predmet['volume'] == 0: predmet['volume'] = 0.01
     return {"type_id" : int(type_id), 'name' : predmet['name'], 'ob' : predmet['volume']}
 
-def proverka(type_id = 1333): #наличие товара в базе - если нет - заносим в кэш и получаем имя
+def proverka(type_id): #наличие товара в базе - если нет - заносим в кэш и получаем имя
     for i in predmet_list:
         if i['type_id'] == type_id:
             res = {'name': i['name'], 'ob': i['ob']}
@@ -32,6 +32,7 @@ def proverka(type_id = 1333): #наличие товара в базе - есл�
 
     temp = predmet_info(type_id)
     predmet_list.append(temp)
+    add_info(predmet_list)
     res = {'name':temp['name'], 'ob': temp['ob']}
     print(res)
     return res

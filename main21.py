@@ -3,9 +3,11 @@ import datetime
 from order import track, system_info, constellation_info, get_spisok_in, get_spisok_out, advansed_price
 from resp_in import resp_in
 from resp_out import resp_out
+from predmet import proverka
 from matem import print_res
 
 if __name__ == '__main__':
+    price_kub = 50 #указать минимальный профит с куба
     sys_out = 30001429 #система из которой вылетаем
     sys_in = 30000142 #система куда прилетаем
     station_in = 60003760 #станция куда прилетаем
@@ -14,21 +16,20 @@ if __name__ == '__main__':
     koef = 0.5 #коэффициент жадности
     station_list = []
     start_time = datetime.datetime.now()  # замеряю время работы
-    #
-    # track_list = track(sys_out, sys_in) #выводит номера систем между точками назначения - список []
+
+    #track_list = track(sys_out, sys_in) #выводит номера систем между точками назначения - список []
+    #track_list.pop(-1)
     # print('номера систем по пути', track_list)
-    # track_list.pop(-1)
-    # print('номера систем по пути', track_list)
-    # region_out = constellation_info(system_info(sys_out)['constellation_id'])['region_id'] #определяем регион вылета - далее тут нужно докуртить, чтобы собирало все регионы по ходу движения
+    #region_out = constellation_info(system_info(sys_out)['constellation_id'])['region_id'] #определяем регион вылета - далее тут нужно докуртить, чтобы собирало все регионы по ходу движения
     # print('регион вылета', region_out)
     # #ниже процедура для вывода списка станций которые пролетаем
-    # for sys in track_list:
-    #     station = system_info(sys).get('stations')
-    #     print(station)
-    #     if station != None:
-    #         station_list += station
-    # print('список станций', station_list)
-
+    #for sys in track_list:
+    #    station = system_info(sys).get('stations')
+    #    #print(station)
+    #    if station != None:
+    #        station_list += station
+    station_list = [60000946, 60002326, 60004036, 60004042, 60004045, 60004201, 60004204, 60004336, 60000949, 60003988, 60004192, 60004195, 60002320, 60003985, 60004198, 60004339, 60004345, 60000940, 60000943, 60002317, 60002323, 60003982, 60004039, 60004207, 60004342, 60000265, 60000313, 60000316, 60000736, 60000739, 60000979, 60001522, 60002914, 60003742, 60003865, 60000256, 60000271, 60000310, 60002305, 60004003, 60007372, 60007375, 60000733, 60002920, 60002923, 60003124, 60003877, 60006844, 60007369, 60000352, 60004027, 60004291, 60004294, 60013105, 60001462, 60001468, 60004432, 60007597, 60000763, 60000844, 60000892, 60000895, 60002419, 60003094, 60003916, 60003925, 60004012, 60004018]
+    print('список станций', station_list)
     # resp_in = get_spisok_in(reg_in, 'buy', station_in) #список ордеров на продажу [type, price, volume]
     # with open("resp_in.py", "w") as file:
     #     file.write(f'resp_in = {resp_in}')
@@ -39,7 +40,7 @@ if __name__ == '__main__':
 
     resp_in_s = resp_in
     resp_out_s = resp_out
-
+    final_list_out_buy = []
     while resp_in_s != []:
         # -------- получаем список ордеров на покупку отсортировано от меньшего к большему-------
         type_list_in = []
@@ -67,9 +68,62 @@ if __name__ == '__main__':
             type_list_out_buy = []
             for order in type_list_out:
                 if  order[1] < type_list_in[0][1]*naz: type_list_out_buy.append(order)
-            print(type_list_in)
-            print(type_list_out_buy)
+            #print(type_list_in)
+            #print(type_list_out_buy)
+            # ранее мы отобрали товары по ценам, сейчас отберем по количеству
+            i, j = 0, 0
+            while i <= (len(type_list_in) - 1) and j <= (len(type_list_out_buy) - 1):
+                if type_list_in[i][2] <= 0: i+=1
+                elif type_list_out_buy[j][2] <= 0: j+=1
+                elif type_list_out_buy[j][1] >= (type_list_in[i][1] * naz): break
+                elif type_list_out_buy[j][2] == type_list_in[i][2]:            #если количество на покупку и продажу равно
+                    type_list_out_buy[j].append((type_list_in[i][1] * naz) - type_list_out_buy[j][1])
+                    final_list_out_buy.append(type_list_out_buy[j])
+                    type_list_in[i][2] = 0
+                    type_list_out_buy[j][2] = 0
+                    j += 1
+                    i += 1
+                elif type_list_out_buy[j][2] < type_list_in[i][2]:  #если количество на покупку меньше чем на продажу
+                    type_list_out_buy[j].append((type_list_in[i][1] * naz) - type_list_out_buy[j][1])
+                    final_list_out_buy.append(type_list_out_buy[j])
+                    type_list_in[i][2] -= type_list_out_buy[j][2]
+                    j +=1
+                elif type_list_out_buy[j][2] > type_list_in[i][2]: #если количество на продажу больше чем на покупку
+                    type_list_in[i].append(type_list_out_buy[j][3])
+                    type_list_in[i].append((type_list_in[i][1] * naz) - type_list_out_buy[j][1])
+                    final_list_out_buy.append(type_list_in[i])
+                    type_list_out_buy[j][2] -= type_list_in[i][2]
+                    i+=1
+    print(final_list_out_buy) #печатаем выгодные по цене ордера на покупку
+    print(len(final_list_out_buy))
+    #проверяем, что все товары есть в списке товаров
+    for i in final_list_out_buy: #заменяем индекс товара на название и добавляем объем и убираем что не прошло по объему [имя, цена, количество, станция, проофит за штуку, объем)
+        k = proverka(i[0])
+        i[0] = k['name']
+        i.append(k['ob'])
+        if i[4] / i[5] < price_kub: final_list_out_buy.remove(i)
+    print(final_list_out_buy)
+    print(len(final_list_out_buy))
+    #выводим список для каждой станции
+    for i in station_list:
+        prof = 0
+        ob = 0
+        print('номер станции', i)
+        for j in final_list_out_buy:
+            if i == j[3]:
+                print(j[0], j[2])
+                prof += j[4]*j[2]
+                ob += j[5]*j[2]
+        print(f'Профит: {prof}, Объем: {ob}')
+
+
+    # далее отсекаем ордера которые не подходят по объему
+
+
+
+
         # -------- выбираем товар для покупки
+
         # --- формируем список покупок
         
 
