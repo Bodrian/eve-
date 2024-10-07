@@ -192,7 +192,7 @@ def station_info(station): #информация по станции
     #{'solar_system_id': 30001429, 'station_name': 'Torrinos V - Moon 16 - Home Guard Logistic Support'}
     url = f'https://esi.evetech.net/legacy/universe/stations/{station}/'
     station_id_list = get_resp(url)
-    print(station_id_list)
+    #print(station_id_list)
     return station_id_list
 
 def get_spisok_in(reg, sell_buy, station): #фортирует общий список предметов в системе куда летим
