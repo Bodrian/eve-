@@ -18,13 +18,13 @@ if __name__ == '__main__':
     reg_out = 10000002 #регион откуда летим
     naz = 0.935  # наценка на транзакцию
 
-    #resp_out = get_spisok_in(reg_out, 'sell', station_out)  # список ордеров на продажу [type, price, volume]
-    #with open("resp_out.py", "w") as file:
-    #   file.write(f'resp_out = {resp_out}')
+    resp_out = get_spisok_in(reg_out, 'sell', station_out)  # список ордеров на продажу [type, price, volume]
+    with open("resp_out.py", "w") as file:
+       file.write(f'resp_out = {resp_out}')
     #
-    #resp_in = get_spisok_in_reg(reg_in, 'buy')
-    #with open("resp_in.py", "w") as file:
-    #   file.write(f'resp_in = {resp_in}')
+    resp_in = get_spisok_in_reg(reg_in, 'buy')
+    with open("resp_in.py", "w") as file:
+       file.write(f'resp_in = {resp_in}')
 
     resp_in_s = resp_in
     resp_out_s = resp_out
@@ -96,6 +96,7 @@ if __name__ == '__main__':
         k = proverka(i[0])
         i[0] = k['name']
         i.append(k['ob'])
+        if len(i) != 6: continue
         if i[4] / i[5] > price_kub: final1_list_out_buy.append(i)
     # print(final1_list_out_buy)
     # print(len(final1_list_out_buy))

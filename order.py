@@ -25,7 +25,7 @@ def get_api(url, params, buy_sell): #получение API с сайта
     headers = {'User-Agent': 'Chrome/39.0.2171.95 Safari/537.36'}
     try:
         par = {'page': params, 'order_type': buy_sell}
-        response = requests.get(url, headers=headers, params=par, timeout=5)
+        response = requests.get(url, headers=headers, params=par, timeout=10)
         if response.ok == True:
             resp = response.json()
             return resp
@@ -34,6 +34,7 @@ def get_api(url, params, buy_sell): #получение API с сайта
             return False
     except requests.exceptions.Timeout:
         print("Timeout occurred")
+        return 'Time out'
     except requests.exceptions.ConnectionError:
         print("No response")
     return False
@@ -109,7 +110,7 @@ def spisok_tovarov_buy(resp_out, resp_in, sys_out, sys_in, naz): #на вход 
 def get_resp(url): #получение API с сайта без параметров
     headers = {'User-Agent': 'Chrome/39.0.2171.95 Safari/537.36'}
     try:
-        response = requests.get(url, headers=headers, timeout=5)
+        response = requests.get(url, headers=headers, timeout=10)
         if response.ok == True:
             resp = response.json()
             return resp
@@ -196,7 +197,7 @@ def station_info(station): #информация по станции
     return station_id_list
 
 def get_spisok_in(reg, sell_buy, station): #фортирует общий список предметов в системе куда летим
-    url = f'https://esi.evetech.net/latest/markets/{reg}/orders/'
+    url = f'https://esi.evetech.net/v1/markets/{reg}/orders/'
     a = 0
     resp_out = []
     while True:
@@ -204,6 +205,9 @@ def get_spisok_in(reg, sell_buy, station): #фортирует общий спи
         resp_temp = get_api(url, str(a), sell_buy)
         if resp_temp == False:
             break
+        elif resp_temp == 'Time out':
+            a -= 1
+            continue
         print(a)
         for i in resp_temp:
             if i['location_id'] == station:
@@ -214,7 +218,7 @@ def get_spisok_in(reg, sell_buy, station): #фортирует общий спи
     return resp_out
 
 def get_spisok_out(reg, sell_buy, station): #фортирует общий список предметов в системе
-    url = f'https://esi.evetech.net/latest/markets/{reg}/orders/'
+    url = f'https://esi.evetech.net/v1/markets/{reg}/orders/'
     a = 0
     resp_out = []
     while True:
@@ -222,6 +226,9 @@ def get_spisok_out(reg, sell_buy, station): #фортирует общий сп�
         resp_temp = get_api(url, str(a), sell_buy)
         if resp_temp == False:
             break
+        elif resp_temp == 'Time out':
+            a -= 1
+            continue
         print(a)
         for i in resp_temp:
             if i['location_id'] in station:
@@ -244,6 +251,9 @@ def get_spisok_in_reg(reg, sell_buy): #фортирует общий списо�
         resp_temp = get_api(url, str(a), sell_buy)
         if resp_temp == False:
             break
+        elif resp_temp == 'Time out':
+            a -= 1
+            continue
         print(a)
         for i in resp_temp:
                 resp_out.append([i['type_id'], i['price'], i['volume_remain'], i['location_id']])

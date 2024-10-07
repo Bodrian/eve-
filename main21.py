@@ -2,8 +2,8 @@
 # https://esi.evetech.net/latest/universe/stations/{station_id}/ инфа по станции
 import datetime
 from order import station_info, track, system_info, constellation_info, get_spisok_in, get_spisok_out, advansed_price
-from resp_in import resp_in
-from resp_out import resp_out
+#from resp_in import resp_in
+#from resp_out import resp_out
 from predmet import proverka
 from matem import print_res
 
