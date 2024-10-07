@@ -1,4 +1,4 @@
-#программа собирает ордера только с региона вылета - другие регионы не участвуют
+#программа собирает ордера на покупку с маршрута от точки вылета до хаба
 # https://esi.evetech.net/latest/universe/stations/{station_id}/ инфа по станции
 import datetime
 from order import station_info, track, system_info, constellation_info, get_spisok_in, get_spisok_out, advansed_price
@@ -15,16 +15,16 @@ if __name__ == '__main__':
     station_in = 60003760 #станция куда прилетаем
     reg_in = 10000002 #регион куда летим
     naz = 0.935  # наценка на транзакцию
-    koef = 0.5 #коэффициент жадности
     station_list = []
     start_time = datetime.datetime.now()  # замеряю время работы
 
     track_list = track(sys_out, sys_in) #выводит номера систем между точками назначения - список []
-    track_list.pop(-1)
+    track_list.pop(-1) #удаляем систему прибытия
     # print('номера систем по пути', track_list)
     region_out = constellation_info(system_info(sys_out)['constellation_id'])['region_id'] #определяем регион вылета - далее тут нужно докуртить, чтобы собирало все регионы по ходу движения
     # print('регион вылета', region_out)
-    # #ниже процедура для вывода списка станций которые пролетаем
+
+    #ниже процедура для вывода списка станций, которые пролетаем
     for sys in track_list:
         station = system_info(sys).get('stations')
         #print(station)
@@ -33,12 +33,12 @@ if __name__ == '__main__':
     #station_list = [60000946, 60002326, 60004036, 60004042, 60004045, 60004201, 60004204, 60004336, 60000949, 60003988, 60004192, 60004195, 60002320, 60003985, 60004198, 60004339, 60004345, 60000940, 60000943, 60002317, 60002323, 60003982, 60004039, 60004207, 60004342, 60000265, 60000313, 60000316, 60000736, 60000739, 60000979, 60001522, 60002914, 60003742, 60003865, 60000256, 60000271, 60000310, 60002305, 60004003, 60007372, 60007375, 60000733, 60002920, 60002923, 60003124, 60003877, 60006844, 60007369, 60000352, 60004027, 60004291, 60004294, 60013105, 60001462, 60001468, 60004432, 60007597, 60000763, 60000844, 60000892, 60000895, 60002419, 60003094, 60003916, 60003925, 60004012, 60004018]
     #print('список станций', station_list)
     resp_in = get_spisok_in(reg_in, 'buy', station_in) #список ордеров на продажу [type, price, volume]
-    with open("resp_in.py", "w") as file:
-        file.write(f'resp_in = {resp_in}')
+    #with open("resp_in.py", "w") as file:
+    #    file.write(f'resp_in = {resp_in}')
     #
     resp_out = get_spisok_out(region_out, 'sell', station_list)
-    with open("resp_out.py", "w") as file:
-        file.write(f'resp_out = {resp_out}')
+    #with open("resp_out.py", "w") as file:
+    #    file.write(f'resp_out = {resp_out}')
 
     resp_in_s = resp_in
     resp_out_s = resp_out
@@ -105,9 +105,12 @@ if __name__ == '__main__':
         i[0] = k['name']
         i.append(k['ob'])
         if i[4] / i[5] > price_kub: final1_list_out_buy.append(i)
-    #print(final1_list_out_buy)
-    #print(len(final1_list_out_buy))
+    print(final1_list_out_buy)
+    print(len(final1_list_out_buy))
     #выводим список для каждой станции
+
+
+
     buy_dic = {}
     for i in station_list:
         prof = 0

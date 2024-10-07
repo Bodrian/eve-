@@ -235,6 +235,21 @@ def advansed_price():
     url = 'https://esi.evetech.net/latest/markets/prices/'
     return get_resp(url)
 
+def get_spisok_in_reg(reg, sell_buy): #фортирует общий список предметов в системе
+    url = f'https://esi.evetech.net/latest/markets/{reg}/orders/'
+    a = 0
+    resp_out = []
+    while True:
+        a += 1
+        resp_temp = get_api(url, str(a), sell_buy)
+        if resp_temp == False:
+            break
+        print(a)
+        for i in resp_temp:
+                resp_out.append([i['type_id'], i['price'], i['volume_remain'], i['location_id']])
+        resp_out.sort()
+    return resp_out
+
 
 if __name__ == '__main__':
     tmp = system_info(30000142)
